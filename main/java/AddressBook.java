@@ -1,13 +1,11 @@
-import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
-import com.opencsv.bean.StatefulBeanToCsv;
-import com.opencsv.bean.StatefulBeanToCsvBuilder;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -240,48 +238,33 @@ public class AddressBook {
         valueList.forEach((shortedList) -> System.out.println(shortedList));
     }
 
-    public static void writeAddressInToFile() throws IOException,
-            CsvDataTypeMismatchException,
-            CsvRequiredFieldEmptyException {
-        String OBJECT_ARRAY_SAMPLE = "/home/pawan/Desktop/PlayGround/AddressBook.csv";
-        try (
-                Writer writer = Files.newBufferedWriter(Paths.get(OBJECT_ARRAY_SAMPLE));
-            )
+    public static void writeAddressInToFile(){
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            mapper.writeValue(new File("/home/pawan/Desktop/PlayGround/AddressBook.json"), contactList);
+        }catch (Exception e)
         {
-            StatefulBeanToCsv<ContactDetails> beanToCsv = new StatefulBeanToCsvBuilder(writer)
-                    .withQuotechar(CSVWriter.NO_QUOTE_CHARACTER)
-                    .build();
-
-            List <ContactDetails> valueList=new ArrayList<ContactDetails>(contactList.values());
-
-            beanToCsv.write(valueList);
+            e.printStackTrace();
         }
+
     }
 
-    public void detailLoader() throws IOException {
-        String FILE_PATH ="/home/pawan/Desktop/PlayGround/AddressBook.csv";
+    public void detailLoader()
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            contactList = mapper.readValue(new File(
+                            "/home/pawan/Desktop/PlayGround/AddressBook.json"),
+                    new TypeReference<HashMap<String, ContactDetails>>() {});
 
-        try (
-                Reader reader = Files.newBufferedReader(Paths.get(FILE_PATH));
-                CSVReader csvReader = new CSVReader(reader);
-            )
-            {
-                List<String[]> records = csvReader.readAll();
+        }catch (JsonGenerationException e){
+            e.printStackTrace();
+        }catch (JsonMappingException e){
+            e.printStackTrace();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
 
-                for (String[] record : records){
-                    ContactDetails contactDetails = new ContactDetails();
-                    contactDetails.setfName(record[3]);
-                    contactDetails.setlName(record[4]);
-                    contactDetails.setPhoneNumber(record[5]);
-                    contactDetails.setEmailId(record[2]);
-                    contactDetails.setAddress(record[0]);
-                    contactDetails.setCity(record[1]);
-                    contactDetails.setZip(record[7]);
-                    contactDetails.setState(record[6]);
-
-                    contactList.put(contactDetails.getEmailId(), contactDetails);
-                }
-            }
     }
 
 
@@ -349,6 +332,9 @@ public class AddressBook {
                     storeInDictIfBelongToSameCityOrState();
                     break;
 
+                case 12:
+                    detailLoader();
+                    break;
                 case 0:
                     isTerminate = true;
                     break;

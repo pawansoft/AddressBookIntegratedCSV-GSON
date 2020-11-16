@@ -1,6 +1,6 @@
 import com.opencsv.bean.CsvBindByName;
 
-public class ContactDetails {
+public class ContactDetails extends Object{
     //Declaring the contact detail variables
     @CsvBindByName(column = "fname")
     private String fName;
