@@ -1,37 +1,48 @@
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.plaf.nimbus.State;
-import java.io.*;
-import java.nio.file.NoSuchFileException;
+import com.opencsv.CSVReader;
+
+import java.io.Reader;
+import java.util.Iterator;
 
 public class StateCensusService {
-public int countNumberOfRows(String fileLocation) throws StateCensusException {
 
-    File file = new File(fileLocation);
-    int numRows = -1;
-    try {
-        BufferedReader reader = new BufferedReader(new FileReader(fileLocation));
-        int index = fileLocation.lastIndexOf('.');
-        String extension = fileLocation.substring(index + 1);
-        System.out.println(extension);
-        if (!extension.equals("csv")) {
-            throw new StateCensusException(StateCensusException.exceptionType.INCORRECT_FILE_TYPE, "please select correct file type");
+    public static <K> int getRowCount(Iterator<K> iterator) throws StateCensusException {
+        int numDetails = 0;
+        try{
+            while (iterator.hasNext()){
+                numDetails++;
+                iterator.next();
+            }
+        }catch (RuntimeException e){
+            throw new StateCensusException(StateCensusException.exceptionType.DELIMITER_EXCEPTION, "Wrong delimiter");
         }
-
-        while (reader.readLine() != null) {
-            numRows++;
-        }
-        reader.close();
-    } catch (NoSuchFileException notFound) {
-        throw new StateCensusException(StateCensusException.exceptionType.FILE_NOT_FOUND, "File not found");
-    }
-    catch (RuntimeException e){
-        throw new StateCensusException(StateCensusException.exceptionType.HEADER_EXCEPTION, "Error in Header");
-    }
-    catch (IOException e){
-        e.printStackTrace();
+        return numDetails;
     }
 
+    public int fetchStateCodeFileDetail(String fileLocation) throws StateCensusException {
+        CheckFileExtension.checkFileExtension(fileLocation);
 
-    return numRows;
-}
+        FileAvailabilityCheckService.isFileFound(fileLocation);
+
+        Reader reader = ReaderHelper.readCSVFile(fileLocation);
+
+        ICSVBuilder csvBuilder = CSVBuilderFactory.createBuilder();
+
+        Iterator<IndianStateCode> iterator = csvBuilder.fetchCsvFileIterator(reader, IndianStateCode.class);
+
+        return getRowCount(iterator);
+    }
+
+    public int fetchStateCensusDetail(String fileLocation) throws StateCensusException {
+        CheckFileExtension.checkFileExtension(fileLocation);
+
+        FileAvailabilityCheckService.isFileFound(fileLocation);
+
+        Reader reader = ReaderHelper.readCSVFile(fileLocation);
+
+        ICSVBuilder csvBuilder = CSVBuilderFactory.createBuilder();
+
+        Iterator<IndianStateCode> iterator = csvBuilder.fetchCsvFileIterator(reader, StateCensus.class);
+
+        return getRowCount(iterator);
+    }
 }
